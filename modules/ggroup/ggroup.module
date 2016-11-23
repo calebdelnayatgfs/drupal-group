@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * Enables Subgroup functionality.
+ */
+
+use Drupal\group\Entity\GroupTypeInterface;
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function ggroup_entity_type_alter(array &$entity_types) {
+  /** @var \Drupal\Core\Entity\EntityTypeInterface[] $entity_types */
+  // Add the subgroup creation wizard steps as entity forms.
+  $entity_types['group']->setFormClass('ggroup-form', 'Drupal\ggroup\Form\SubgroupFormStep1');
+  $entity_types['group_content']->setFormClass('ggroup-form', 'Drupal\ggroup\Form\SubgroupFormStep2');
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ */
+function ggroup_group_type_insert(GroupTypeInterface $group_type) {
+  \Drupal::service('plugin.manager.group_content_enabler')->clearCachedDefinitions();
+}

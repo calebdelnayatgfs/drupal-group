@@ -1,0 +1,5 @@
+services:
+  access_check.ggroup.add:
+    class: Drupal\ggroup\Access\SubgroupAddAccessCheck
+    tags:
+      - { name: access_check, applies_to: _subgroup_add_access }
