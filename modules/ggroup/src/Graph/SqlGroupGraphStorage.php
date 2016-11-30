@@ -200,11 +200,11 @@ EOT;
   }
 
   /**
-   * {@inheritdocs}
+   * {@inheritdoc}
    */
   public function addEdge($a, $b) {
     if ($a === $b) {
-      return 0;
+      return FALSE;
     }
 
     $ab_edge_id = $this->getEdgeId($a, $b);
@@ -232,7 +232,7 @@ EOT;
   }
 
   /**
-   * {@inheritdocs}
+   * {@inheritdoc}
    */
   public function removeEdge($a, $b) {
     $edge_id = $this->getEdgeId($a, $b);
@@ -279,7 +279,7 @@ EOT;
   }
 
   /**
-   * {@inheritdocs}
+   * {@inheritdoc}
    */
   public function getDescendants($group_id) {
     return $this->connection->query('SELECT end_vertex FROM {group_graph} WHERE start_vertex = :group_id', [
@@ -288,7 +288,7 @@ EOT;
   }
 
   /**
-   * {@inheritdocs}
+   * {@inheritdoc}
    */
   public function getAncestors($group_id) {
     return $this->connection->query('SELECT start_vertex FROM {group_graph} WHERE end_vertex = :group_id', [
@@ -297,14 +297,14 @@ EOT;
   }
 
   /**
-   * {@inheritdocs}
+   * {@inheritdoc}
    */
   public function isAncestor($a, $b) {
     return $this->isDescendant($b, $a);
   }
 
   /**
-   * {@inheritdocs}
+   * {@inheritdoc}
    */
   public function isDescendant($a, $b) {
     return $this->connection->query('SELECT COUNT(id) FROM {group_graph} WHERE start_vertex = :b AND end_vertex = :a', [

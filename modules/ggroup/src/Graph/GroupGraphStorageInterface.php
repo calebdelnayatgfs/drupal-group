@@ -16,8 +16,9 @@ interface GroupGraphStorageInterface {
    *   The ID of the parent group.
    * @param int $b
    *   The ID of the child group.
-   * @return int
-   *   The ID of the graph edge relating parent group A to child group B.
+   * @return int|FALSE
+   *   The ID of the graph edge relating parent group A to child group B or
+   *   FALSE if the relationship could not be created.
    */
   public function addEdge($a, $b);
 
@@ -76,4 +77,5 @@ interface GroupGraphStorageInterface {
    *   TRUE if group A is an descendant of group B.
    */
   public function isDescendant($a, $b);
+
 }

@@ -5,6 +5,8 @@ namespace Drupal\group;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\group\Entity\GroupInterface;
+use Drupal\group\GroupMembershipLoaderEvents;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Generates and caches the permissions hash for a group membership.
@@ -26,16 +28,26 @@ class GroupMembershipLoader implements GroupMembershipLoaderInterface {
   protected $currentUser;
 
   /**
+   * The event dispatcher.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
    * Constructs a new GroupTypeController.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\Session\AccountInterface $current_user
    *   The current user.
+   * @param \Symfony\Component\EventDispatcher\EventDispatchInterface $event_dispatcher
+   *   The event dispatcher.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, AccountInterface $current_user) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, AccountInterface $current_user, EventDispatcherInterface $event_dispatcher) {
     $this->entityTypeManager = $entity_type_manager;
     $this->currentUser = $current_user;
+    $this->eventDispatcher = $event_dispatcher;
   }
 
   /**
@@ -48,29 +60,18 @@ class GroupMembershipLoader implements GroupMembershipLoaderInterface {
   }
 
   /**
-   * Wraps GroupContent entities ina GroupMembership object.
-   *
-   * @param \Drupal\group\Entity\GroupContentInterface[] $entities
-   *   An array of GroupContent entities to wrap.
-   * 
-   * @return \Drupal\group\GroupMembership[]
-   *   A list of GroupMembership wrapper objects.
-   */
-  protected function wrapGroupContentEntities($entities) {
-    $group_memberships = [];
-    foreach ($entities as $group_content) {
-      $group_memberships[] = new GroupMembership($group_content);
-    }
-    return $group_memberships;
-  }
-  
-  /**
    * {@inheritdoc}
    */
   public function load(GroupInterface $group, AccountInterface $account) {
     $filters = ['entity_id' => $account->id()];
     $group_contents = $this->groupContentStorage()->loadByGroup($group, 'group_membership', $filters);
-    $group_memberships = $this->wrapGroupContentEntities($group_contents);
+    $memberships = new GroupMembershipCollection();
+    $memberships->addGroupContents($group_contents);
+
+    $event = new GroupMembershipLoaderByUserGroupEvent($group, $account, $memberships);
+    $this->eventDispatcher->dispatch(GroupMembershipLoaderEvents::ALTER_BY_USER_GROUP, $event);
+    $group_memberships = $memberships->allValues();
+
     return $group_memberships ? reset($group_memberships) : FALSE;
   }
 
@@ -83,9 +84,16 @@ class GroupMembershipLoader implements GroupMembershipLoaderInterface {
     if (isset($roles)) {
       $filters['group_roles'] = (array) $roles;
     }
-    
+
+    /** @var \Drupal\group\Entity\GroupContentInterface[] $group_contents */
     $group_contents = $this->groupContentStorage()->loadByGroup($group, 'group_membership', $filters);
-    return $this->wrapGroupContentEntities($group_contents);
+    $memberships = new GroupMembershipCollection();
+    $memberships->addGroupContents($group_contents);
+
+    $event = new GroupMembershipLoaderByGroupEvent($group, !is_null($roles) ? $roles : [], $memberships);
+    $this->eventDispatcher->dispatch(GroupMembershipLoaderEvents::ALTER_BY_GROUP, $event);
+
+    return $memberships->allValues();
   }
 
   /**
@@ -119,7 +127,13 @@ class GroupMembershipLoader implements GroupMembershipLoaderInterface {
 
     /** @var \Drupal\group\Entity\GroupContentInterface[] $group_contents */
     $group_contents = $this->groupContentStorage()->loadByProperties($properties);
-    return $this->wrapGroupContentEntities($group_contents);
+    $memberships = new GroupMembershipCollection();
+    $memberships->addGroupContents($group_contents);
+
+    $event = new GroupMembershipLoaderByUserEvent($account, !is_null($roles) ? $roles : [], $memberships);
+    $this->eventDispatcher->dispatch(GroupMembershipLoaderEvents::ALTER_BY_USER, $event);
+
+    return $memberships->allValues();
   }
 
 }

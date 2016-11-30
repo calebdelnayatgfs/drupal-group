@@ -70,7 +70,7 @@ services:
       - { name: 'context_provider' }
   group.membership_loader:
     class: 'Drupal\group\GroupMembershipLoader'
-    arguments: ['@entity_type.manager', '@current_user']
+    arguments: ['@entity_type.manager', '@current_user', '@event_dispatcher']
   group.permissions:
     class: 'Drupal\group\Access\GroupPermissionHandler'
     arguments: ['@module_handler', '@string_translation', '@controller_resolver', '@plugin.manager.group_content_enabler']
