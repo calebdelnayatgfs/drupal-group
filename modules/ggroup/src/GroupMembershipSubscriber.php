@@ -72,6 +72,10 @@ class GroupMembershipSubscriber implements EventSubscriberInterface {
     $plugin = $group->getGroupType()->getContentPlugin('group_membership');
     $subgroup_ids = $this->groupHierarchyManager->getGroupSubgroupIds($group);
 
+    if (empty($subgroup_ids)) {
+      return;
+    }
+
     // Load all group content types for the membership content enabler plugin.
     $group_content_types = $this->entityTypeManager
       ->getStorage('group_content_type')
@@ -146,6 +150,10 @@ class GroupMembershipSubscriber implements EventSubscriberInterface {
     }
 
     $supergroup_ids = array_unique($supergroup_ids);
+
+    if (empty($supergroup_ids)) {
+      return;
+    }
 
     $supergroups = $this->entityTypeManager
       ->getStorage('group')
